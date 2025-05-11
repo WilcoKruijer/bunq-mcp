@@ -57,7 +57,6 @@ export class MyMCP extends McpAgent<ExtendedProps, Env> {
       }
     });
 
-    // Tool to get transactions
     // this.server.tool(
     //   "bunqSpendingReport",
     //   "Get spending report from bunq (optionally for a date range)",
