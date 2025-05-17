@@ -1,27 +1,52 @@
 import { BunqContext } from "./BunqContext";
-import { UserAPI } from "./UserAPI";
+import { AccountAPI } from "./api/AccountAPI";
+import { PaymentAPI } from "./api/PaymentAPI";
+import { RequestAPI } from "./api/RequestAPI";
+import { UserProfileAPI } from "./api/UserProfileAPI";
+
+export interface BunqAuthProps {
+  accessToken: string;
+}
 
 export class BunqClient {
   private context: BunqContext;
-  private _user: UserAPI;
+  private _account!: AccountAPI;
+  private _payment!: PaymentAPI;
+  private _request!: RequestAPI;
+  private _profile!: UserProfileAPI;
 
   constructor(accessToken?: string) {
     this.context = new BunqContext(accessToken);
-    this._user = new UserAPI(this.context);
+    this.initializeAPIs();
+  }
+
+  private initializeAPIs() {
+    this._account = new AccountAPI(this.context);
+    this._payment = new PaymentAPI(this.context);
+    this._request = new RequestAPI(this.context);
+    this._profile = new UserProfileAPI(this.context);
   }
 
   setAccessToken(accessToken: string) {
     this.context = new BunqContext(accessToken);
-    this._user = new UserAPI(this.context);
+    this.initializeAPIs();
   }
 
-  get user() {
-    return this._user;
+  get account() {
+    return this._account;
   }
 
-  // Additional API modules can be added here as needed
-  // For example:
-  // get payments() { return this._payments; }
+  get payment() {
+    return this._payment;
+  }
+
+  get request() {
+    return this._request;
+  }
+
+  get profile() {
+    return this._profile;
+  }
 
   async initialize() {
     return this.context.initialize();
@@ -38,5 +63,9 @@ export function getBunqClient(accessToken?: string): BunqClient {
     bunqClient.setAccessToken(accessToken);
   }
 
+  return bunqClient;
+}
+
+export function getBunqClientIfInitialized(): BunqClient | null {
   return bunqClient;
 }

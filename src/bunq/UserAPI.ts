@@ -71,6 +71,34 @@ export interface UserProfile {
   email?: string;
 }
 
+export interface RequestInquiry {
+  id: number;
+  created: string;
+  updated: string;
+  time_responded: string;
+  time_expiry: string;
+  monetary_account_id: number;
+  amount_inquired: { value: string; currency: string };
+  amount_responded: { value: string; currency: string };
+  user_alias_created: any;
+  user_alias_revoked: any;
+  counterparty_alias: any;
+  description: string;
+  merchant_reference: string;
+  attachment: Array<{ id: number }>;
+  status: string;
+  batch_id: number;
+  scheduled_id: number;
+  minimum_age: number;
+  require_address: string;
+  bunqme_share_url: string;
+  redirect_url: string;
+  address_shipping: any;
+  address_billing: any;
+  geolocation: any;
+  reference_split_the_bill: any;
+}
+
 export class UserAPI {
   #context: BunqContext;
 
@@ -234,33 +262,7 @@ export class UserAPI {
   }) {
     type RequestInquiryResponse = {
       Response: Array<{
-        RequestInquiry: {
-          id: number;
-          created: string;
-          updated: string;
-          time_responded: string;
-          time_expiry: string;
-          monetary_account_id: number;
-          amount_inquired: { value: string; currency: string };
-          amount_responded: { value: string; currency: string };
-          user_alias_created: any;
-          user_alias_revoked: any;
-          counterparty_alias: any;
-          description: string;
-          merchant_reference: string;
-          attachment: Array<{ id: number }>;
-          status: string;
-          batch_id: number;
-          scheduled_id: number;
-          minimum_age: number;
-          require_address: string;
-          bunqme_share_url: string;
-          redirect_url: string;
-          address_shipping: any;
-          address_billing: any;
-          geolocation: any;
-          reference_split_the_bill: any;
-        };
+        RequestInquiry: RequestInquiry;
       }>;
     };
     const url = `/user/${userId}/monetary-account/${monetaryAccountId}/request-inquiry`;
@@ -333,6 +335,9 @@ export class UserAPI {
     // The Bunq API expects the body to be wrapped in an array with the key 'RequestInquiry'
     const requestBody = {
       ...body,
+      counterparty_alias: {
+        ...body.counterparty_alias,
+      },
       allow_bunqme: false,
     };
     console.log("POSTING", url, requestBody);
@@ -344,5 +349,55 @@ export class UserAPI {
     console.log("RESPONSE", JSON.stringify(data, null, 2));
     // The response is { Id: { id: number } }
     return { id: data.Response[0].Id.id };
+  }
+
+  async getRequestInquiry({
+    userId = this.#context.token.userId,
+    monetaryAccountId,
+    itemId,
+  }: {
+    userId?: number;
+    monetaryAccountId: number;
+    itemId: number;
+  }): Promise<RequestInquiry> {
+    const url = `/user/${userId}/monetary-account/${monetaryAccountId}/request-inquiry/${itemId}`;
+    const data = await this.#context.makeSignedRequest<{
+      Response: [{ RequestInquiry: RequestInquiry }];
+    }>(url, "GET");
+    return data.Response[0].RequestInquiry;
+  }
+
+  async listRequestInquiryResponse({
+    userId = this.#context.token.userId,
+    monetaryAccountId,
+  }: {
+    userId?: number;
+    monetaryAccountId: number;
+  }): Promise<any[]> {
+    const url = `/user/${userId}/monetary-account/${monetaryAccountId}/request-response`;
+    const data = await this.#context.makeSignedRequest<{
+      Response: any[];
+    }>(url, "GET");
+    return data.Response;
+  }
+
+  async updateRequestInquiry({
+    userId = this.#context.token.userId,
+    monetaryAccountId,
+    itemId,
+  }: {
+    userId?: number;
+    monetaryAccountId: number;
+    itemId: number;
+  }): Promise<RequestInquiry> {
+    const url = `/user/${userId}/monetary-account/${monetaryAccountId}/request-inquiry/${itemId}`;
+    const requestBody = {
+      status: "ACCEPTED",
+    };
+    const data = await this.#context.makeSignedRequest<{
+      Response: [{ RequestInquiry: RequestInquiry }];
+    }>(url, "PUT", requestBody);
+    console.log("RESPONSE", JSON.stringify(data, null, 2));
+    return data.Response[0].RequestInquiry;
   }
 }

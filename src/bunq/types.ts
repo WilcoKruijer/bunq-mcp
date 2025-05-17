@@ -1,137 +1,97 @@
-// Common API response format for bunq
-export interface BunqResponse<T> {
-  Response: T[];
+// Types moved from UserAPI.ts for centralization
+export interface LabelUser {
+  uuid?: string | null;
+  display_name?: string;
+  country?: string;
+  avatar?: any;
+  public_nick_name?: string;
+  type?: string | null;
+  [key: string]: any;
 }
 
-// Props that will be stored in the OAuth token
-export interface BunqAuthProps {
-  bunqUserId: number;
-  bunqDisplayName: string;
-  accessToken: string;
+export interface CounterpartyAlias {
+  iban?: string | null;
+  is_light?: boolean | null;
+  display_name?: string;
+  avatar?: any;
+  label_user?: LabelUser;
+  country?: string;
+  merchant_category_code?: string;
+  [key: string]: any;
 }
 
-// User types
-export interface BunqUserPerson {
+export interface Payment {
   id: number;
   created: string;
   updated: string;
-  public_uuid: string;
-  first_name: string;
-  middle_name: string;
-  last_name: string;
-  legal_name: string;
-  display_name: string;
-  public_nick_name: string;
-  alias: {
-    type: string;
-    value: string;
-    name: string;
-  }[];
-  tax_resident: {
-    country: string;
-    tax_number: string;
-  }[];
-  document_type: string;
-  document_number: string;
-  document_country_of_issuance: string;
-  address_main: {
-    street: string;
-    house_number: string;
-    postal_code: string;
-    city: string;
-    country: string;
-    province: string;
-    apartment: string;
-    floor: string;
-    letter: string;
-  };
-  address_postal: {
-    street: string;
-    house_number: string;
-    postal_code: string;
-    city: string;
-    country: string;
-    province: string;
-    apartment: string;
-    floor: string;
-    letter: string;
-  };
-  date_of_birth: string;
-  place_of_birth: string;
-  country_of_birth: string;
-  nationality: string;
-  language: string;
-  region: string;
-  gender: string;
-  status: string;
-  sub_status: string;
-  session_timeout: number;
-  daily_limit_without_confirmation_login: {
+  monetary_account_id: number;
+  amount: {
     value: string;
     currency: string;
   };
-  notification_filters: {
-    notification_delivery_method: string;
-    notification_target: string;
-    category: string;
-  }[];
-}
-
-// Account types
-export interface BunqMonetaryAccount {
-  id: number;
-  created: string;
-  updated: string;
-  alias: {
-    type: string;
-    value: string;
-    name: string;
-  }[];
-  avatar: {
-    uuid: string;
-    image: {
-      attachment_public_uuid: string;
-      content_type: string;
-      height: number;
-      width: number;
-    }[];
-  };
-  balance: {
-    value: string;
-    currency: string;
-  };
-  country: string;
-  currency: string;
-  daily_limit: {
-    value: string;
-    currency: string;
-  };
-  daily_spent: {
-    value: string;
-    currency: string;
-  };
+  payment_fee?: any;
   description: string;
-  public_uuid: string;
+  type: string;
+  merchant_reference?: string | null;
+  alias: any;
+  counterparty_alias: CounterpartyAlias;
+  attachment: any[];
+  geolocation?: any;
+  batch_id?: number | null;
+  scheduled_id?: number | null;
+  address_billing?: any;
+  address_shipping?: any;
+  sub_type?: string;
+  payment_arrival_expected?: any;
+  request_reference_split_the_bill?: any[];
+  balance_after_mutation?: {
+    value: string;
+    currency: string;
+  };
+  payment_auto_allocate_instance?: any;
+  payment_suspended_outgoing?: any;
+}
+
+export interface Counterparty {
+  display_name?: string;
+  public_nick_name?: string;
+  iban?: string | null;
+  type?: string;
+  label_user?: LabelUser;
+}
+
+export interface UserProfile {
+  id: number;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface RequestInquiry {
+  id: number;
+  created: string;
+  updated: string;
+  time_responded: string;
+  time_expiry: string;
+  monetary_account_id: number;
+  amount_inquired: { value: string; currency: string };
+  amount_responded: { value: string; currency: string };
+  user_alias_created: any;
+  user_alias_revoked: any;
+  counterparty_alias: any;
+  description: string;
+  merchant_reference: string;
+  attachment: Array<{ id: number }>;
   status: string;
-  sub_status: string;
-  timezone: string;
-  user_id: number;
-  monetary_account_profile: {
-    profile_fill: string;
-    profile_drain: string;
-    profile_action_required: string;
-    profile_amount_required: {
-      value: string;
-      currency: string;
-    };
-  };
-  setting: {
-    color: string;
-    default_avatar_status: string;
-    restriction_chat: string;
-    savaing_goal: {
-      value: string;
-      currency: string;
-    };
-  };
+  batch_id: number;
+  scheduled_id: number;
+  minimum_age: number;
+  require_address: string;
+  bunqme_share_url: string;
+  redirect_url: string;
+  address_shipping: any;
+  address_billing: any;
+  geolocation: any;
+  reference_split_the_bill: any;
 }
