@@ -202,11 +202,7 @@ export class BunqContext {
       "Content-Type": "application/json",
       "X-Bunq-Client-Authentication": this.#retrievedToken.sessionToken,
       "X-Bunq-Client-Signature": signature,
-      "X-Bunq-Geolocation": "52.372775 4.892222 0 2000 NL",
     };
-
-    console.log("headers:");
-    console.log(headers);
 
     const response = await fetch(`https://api.bunq.com/v1${endpoint}`, {
       method,

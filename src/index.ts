@@ -5,6 +5,7 @@ import { createOAuthHandler } from "./bunq/OAuthHandler";
 import { getBunqClient, getBunqClientIfInitialized } from "./bunq/BunqClient";
 import type { BunqAuthProps } from "./bunq/BunqClient";
 import { registerTools } from "./tools";
+import { env } from "cloudflare:workers";
 
 // Add the bunq props that we'll store in the token
 type ExtendedProps = BunqAuthProps;
@@ -32,43 +33,9 @@ export class MyMCP extends McpAgent<ExtendedProps, Env> {
         async (args: any, extra: any) => {
           // We need to properly handle the args and wrap handler for type safety
           return await tool.handler(args, extra);
-        }
+        },
       );
     }
-
-    // // Uncomment to enable spending report tool
-    // this.server.tool(
-    //   "bunqSpendingReport",
-    //   "Get spending report from bunq (optionally for a date range)",
-    //   {
-    //     dateStart: z.string().optional().describe("Start date (YYYY-MM-DD), optional"),
-    //     dateEnd: z.string().optional().describe("End date (YYYY-MM-DD), optional"),
-    //   },
-    //   async ({ dateStart, dateEnd }) => {
-    //     let startDate: Date | undefined = dateStart ? new Date(dateStart) : undefined;
-    //     let endDate: Date | undefined = dateEnd ? new Date(dateEnd) : undefined;
-    //     try {
-    //       const transactions = await bunqClient.payment.getInsights({
-    //         dateStart: startDate,
-    //         dateEnd: endDate,
-    //       });
-    //       return {
-    //         content: [
-    //           {
-    //             type: "text",
-    //             text: JSON.stringify(transactions),
-    //           },
-    //         ],
-    //       };
-    //     } catch (error) {
-    //       console.error(error);
-    //       return {
-    //         content: [{ type: "text", text: `Error fetching transactions: ${error}` }],
-    //         isError: true,
-    //       };
-    //     }
-    //   },
-    // );
   }
 }
 
@@ -76,6 +43,10 @@ export class MyMCP extends McpAgent<ExtendedProps, Env> {
 const bunqHandler = createOAuthHandler();
 
 bunqHandler.get("/hello-world", async (c) => {
+  if (!env.IS_DEVELOPMENT) {
+    return c.text("Not allowed in production", 400);
+  }
+
   const bunqClient = getBunqClientIfInitialized();
   if (!bunqClient) {
     return c.text("No bunq client found", 400);
@@ -87,7 +58,7 @@ bunqHandler.get("/hello-world", async (c) => {
     return c.text("No accounts found", 400);
   }
 
-  const inquiries = await bunqClient.request.getRequestInquiries({
+  const inquiries = await bunqClient.request.listRequestInquiries({
     monetaryAccountId: firstAccount.id,
   });
 
@@ -97,6 +68,10 @@ bunqHandler.get("/hello-world", async (c) => {
 });
 
 bunqHandler.get("/hello-world-2", async (c) => {
+  if (!env.IS_DEVELOPMENT) {
+    return c.text("Not allowed in production", 400);
+  }
+
   const bunqClient = getBunqClientIfInitialized();
   if (!bunqClient) {
     return c.text("No bunq client found", 400);

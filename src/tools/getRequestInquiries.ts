@@ -10,7 +10,7 @@ export default function getRequestInquiriesTool(bunqClient: BunqClient) {
     },
     handler: async ({ monetaryAccountId }: { monetaryAccountId: number }) => {
       try {
-        const inquiries = await bunqClient.request.getRequestInquiries({ monetaryAccountId });
+        const inquiries = await bunqClient.request.listRequestInquiries({ monetaryAccountId });
         return {
           content: [
             {

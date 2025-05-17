@@ -11,7 +11,7 @@ export class RequestAPI {
   /**
    * Get request inquiries for a specific monetary account
    */
-  async getRequestInquiries({
+  async listRequestInquiries({
     userId = this.#context.token.userId,
     monetaryAccountId,
   }: {

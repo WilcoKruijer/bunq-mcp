@@ -6,8 +6,7 @@ import {
   parseRedirectApproval,
   renderApprovalDialog,
 } from "../workers-oauth-utils";
-import { getBunqClient } from "./BunqClient";
-import type { BunqAuthProps } from "./types";
+import { getBunqClient, type BunqAuthProps } from "./BunqClient";
 
 export const createOAuthHandler = () => {
   const app = new Hono<{ Bindings: Env & { OAUTH_PROVIDER: OAuthHelpers } }>();

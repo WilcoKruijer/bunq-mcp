@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { BunqClient } from "../bunq/BunqClient";
 
-export default function createPaymentRequestTool(bunqClient: BunqClient) {
+export default function createPaymentTool(bunqClient: BunqClient) {
   return {
-    name: "createPaymentRequest",
+    name: "createPayment",
     description:
-      "Create a payment request to add funds to a specific monetary account. " +
-      "You must provide exactly one of counterpartyIban, counterpartyEmail, or counterpartyPhone.",
+      "Create a draft payment from a specific monetary account. " +
+      "You must provide exactly one of counterpartyIban, counterpartyEmail, or counterpartyPhone. " +
+      "This creates a draft payment that requires review before being executed. " +
+      "You can also schedule recurring payments with optional parameters.",
     parameters: {
       monetaryAccountId: z.number().describe("Monetary Account ID"),
       amount: z
@@ -15,7 +17,7 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
           value: z.string().describe("Amount as string, e.g. '184.80'"),
         })
         .describe("Amount object: { currency: 'EUR', value: '184.80' }"),
-      description: z.string().describe("Description for the request inquiry"),
+      description: z.string().describe("Description for the payment"),
       counterpartyIban: z
         .string()
         .optional()
@@ -35,6 +37,22 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
           "Counterparty Phone (optional, but exactly one of IBAN, Email, or Phone must be set)",
         ),
       counterpartyName: z.string().describe("Counterparty display name (used for all types)"),
+      scheduleStart: z
+        .string()
+        .optional()
+        .describe("Schedule start date in ISO format (YYYY-MM-DD) UTC"),
+      scheduleEnd: z
+        .string()
+        .optional()
+        .describe("Schedule end date in ISO format (YYYY-MM-DD) UTC, optional"),
+      scheduleRecurrenceUnit: z
+        .enum(["ONCE", "HOURLY", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"])
+        .optional()
+        .describe("Recurrence unit, optional"),
+      scheduleRecurrenceSize: z
+        .number()
+        .optional()
+        .describe("Recurrence size, e.g. 1 for once per unit, optional"),
     },
     handler: async ({
       monetaryAccountId,
@@ -44,6 +62,10 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
       counterpartyEmail,
       counterpartyPhone,
       counterpartyName,
+      scheduleStart,
+      scheduleEnd,
+      scheduleRecurrenceUnit,
+      scheduleRecurrenceSize,
     }: {
       monetaryAccountId: number;
       amount: { currency: string; value: string };
@@ -52,6 +74,10 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
       counterpartyEmail?: string;
       counterpartyPhone?: string;
       counterpartyName: string;
+      scheduleStart?: string;
+      scheduleEnd?: string;
+      scheduleRecurrenceUnit?: "ONCE" | "HOURLY" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+      scheduleRecurrenceSize?: number;
     }) => {
       // Validate that exactly one counterparty field is set
       const provided = [counterpartyIban, counterpartyEmail, counterpartyPhone].filter(Boolean);
@@ -91,13 +117,25 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
         };
       }
       try {
-        const result = await bunqClient.request.createRequestInquiry({
+        // Create schedule object if scheduling parameters are provided
+        let schedule;
+        if (scheduleStart) {
+          schedule = {
+            time_start: scheduleStart,
+            ...(scheduleEnd && { time_end: scheduleEnd }),
+            ...(scheduleRecurrenceUnit && { recurrence_unit: scheduleRecurrenceUnit }),
+            ...(scheduleRecurrenceSize && { recurrence_size: scheduleRecurrenceSize }),
+          };
+        }
+
+        const result = await bunqClient.payment.createDraftPayment({
           monetaryAccountId,
           body: {
-            amount_inquired: amount,
+            amount: amount,
             counterparty_alias: counterpartyAlias,
             description,
           },
+          ...(schedule && { schedule }),
         });
         return {
           content: [{ type: "text", text: JSON.stringify(result) }],
@@ -105,7 +143,7 @@ export default function createPaymentRequestTool(bunqClient: BunqClient) {
       } catch (error) {
         console.error(error);
         return {
-          content: [{ type: "text", text: `Error creating request inquiry: ${error}` }],
+          content: [{ type: "text", text: `Error creating payment: ${error}` }],
           isError: true,
         };
       }

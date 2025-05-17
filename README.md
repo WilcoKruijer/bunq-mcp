@@ -51,3 +51,11 @@ To generate keys:
 ```sh
 openssl genrsa -out bunq-installation.key && openssl rsa -in bunq-installation.key -outform PEM -pubout -out bunq-installation.pub
 ```
+
+## Limitations
+
+- It's not possible to create payments using the OAuth flow. Only draft payments can be created.
+
+```json
+{ "Error": [{ "error_description": "Not enough permissions to create payment." }] }
+```
