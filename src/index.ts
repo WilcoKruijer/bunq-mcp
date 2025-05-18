@@ -5,7 +5,23 @@ import { createOAuthHandler } from "./bunq/OAuthHandler";
 import { getBunqClient, getBunqClientIfInitialized } from "./bunq/BunqClient";
 import type { BunqAuthProps } from "./bunq/BunqClient";
 import { registerTools } from "./tools";
-import { env } from "cloudflare:workers";
+import { env as workersEnv } from "cloudflare:workers";
+import cookie from "./keys/cookie.txt";
+
+const clientId = workersEnv["BUNQ_CLIENT_ID"] || process.env["BUNQ_CLIENT_ID"];
+const clientSecret = workersEnv["BUNQ_CLIENT_SECRET"] || process.env["BUNQ_CLIENT_SECRET"];
+
+if (!clientId) {
+  throw new Error(
+    "Bunq client ID is not set. Please set it using --bunq-client-id or BUNQ_CLIENT_ID environment variable.",
+  );
+}
+
+if (!clientSecret) {
+  throw new Error(
+    "Bunq client secret is not set. Please set it using --bunq-client-secret or BUNQ_CLIENT_SECRET environment variable.",
+  );
+}
 
 // Add the bunq props that we'll store in the token
 type ExtendedProps = BunqAuthProps;
@@ -40,60 +56,33 @@ export class MyMCP extends McpAgent<ExtendedProps, Env> {
 }
 
 // Create the bunq handler
-const bunqHandler = createOAuthHandler();
+const bunqHandler = createOAuthHandler(clientId, clientSecret);
 
-bunqHandler.get("/hello-world", async (c) => {
-  if (!env.IS_DEVELOPMENT) {
-    return c.text("Not allowed in production", 400);
-  }
+bunqHandler.get("/", async (c) => {
+  let text = `bunq-mcp up and running.\n`;
 
+  text += `\n  - Client ID: '${clientId}'`;
+  text += `\n  - Cookie: '${cookie}'`;
   const bunqClient = getBunqClientIfInitialized();
-  if (!bunqClient) {
-    return c.text("No bunq client found", 400);
+
+  if (bunqClient) {
+    text += `\n\nBunq client initialized successfully.`;
+
+    const [firstAccount] = await bunqClient.account.getMonetaryBankAccounts();
+    if (firstAccount) {
+      text += `\n  - Found Bunq account: '${firstAccount.description}'`;
+    } else {
+      text += `\n  - No Bunq (monetary bank) accounts found`;
+    }
+  } else {
+    text += `\n\nBunq client NOT initialized.`;
   }
 
-  const [firstAccount] = await bunqClient.account.getMonetaryBankAccounts();
+  text += `\n\nSee usage instructions at https://npmjs.com/package/bunq-mcp`;
 
-  if (!firstAccount) {
-    return c.text("No accounts found", 400);
-  }
-
-  const inquiries = await bunqClient.request.listRequestInquiries({
-    monetaryAccountId: firstAccount.id,
-  });
-
-  return c.json({
-    inquiries: inquiries[0],
-  });
+  return c.text(text);
 });
 
-bunqHandler.get("/hello-world-2", async (c) => {
-  if (!env.IS_DEVELOPMENT) {
-    return c.text("Not allowed in production", 400);
-  }
-
-  const bunqClient = getBunqClientIfInitialized();
-  if (!bunqClient) {
-    return c.text("No bunq client found", 400);
-  }
-
-  const [firstAccount] = await bunqClient.account.getMonetaryBankAccounts();
-
-  if (!firstAccount) {
-    return c.text("No accounts found", 400);
-  }
-
-  const inquiries = await bunqClient.request.listRequestInquiryResponse({
-    monetaryAccountId: firstAccount.id,
-    // itemId: 229971615,
-  });
-
-  return c.json({
-    inquiries,
-  });
-});
-
-// Use type assertion to bypass type checking issues
 export default new OAuthProvider({
   apiRoute: "/sse",
   apiHandler: MyMCP.mount("/sse") as any,

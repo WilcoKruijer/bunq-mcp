@@ -45,9 +45,6 @@ function decodeState<T = any>(encoded: string): T {
  * @returns A promise resolving to the CryptoKey object.
  */
 async function importKey(secret: string): Promise<CryptoKey> {
-  if (!secret) {
-    throw new Error("COOKIE_SECRET is not defined. A secret key is required for signing cookies.");
-  }
   const enc = new TextEncoder();
   return crypto.subtle.importKey(
     "raw",

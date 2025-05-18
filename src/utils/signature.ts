@@ -1,23 +1,11 @@
-import { env } from "cloudflare:workers";
-
 import devPublicKey from "../keys/dev-public-bunq-key.pub.txt";
 import devPrivateKey from "../keys/dev-private-bunq-key.pem.txt";
 
 export async function getPublicKey(): Promise<string> {
-  if (!env.IS_DEVELOPMENT) {
-    throw new Error("Public key is not available in production.");
-  }
-
   return devPublicKey;
 }
 
 export async function getPrivateKey(): Promise<CryptoKey> {
-  if (!env.IS_DEVELOPMENT) {
-    throw new Error(
-      "Private key is not available in production. Need to setup code to load it from r2 bucket.",
-    );
-  }
-
   // Remove PEM header, footer and newlines
   const privateKeyBase64 = devPrivateKey
     .replace("-----BEGIN PRIVATE KEY-----", "")

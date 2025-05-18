@@ -1,14 +1,14 @@
 import type { AuthRequest, OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
-import { env } from "cloudflare:workers";
 import {
   clientIdAlreadyApproved,
   parseRedirectApproval,
   renderApprovalDialog,
 } from "../workers-oauth-utils";
 import { getBunqClient, type BunqAuthProps } from "./BunqClient";
+import cookie from "../keys/cookie.txt";
 
-export const createOAuthHandler = () => {
+export const createOAuthHandler = (bunqClientId: string, bunqClientSecret: string) => {
   const app = new Hono<{ Bindings: Env & { OAUTH_PROVIDER: OAuthHelpers } }>();
 
   app.get("/authorize", async (c) => {
@@ -18,10 +18,10 @@ export const createOAuthHandler = () => {
       return c.text("Invalid request", 400);
     }
 
-    if (
-      await clientIdAlreadyApproved(c.req.raw, oauthReqInfo.clientId, env.COOKIE_ENCRYPTION_KEY)
-    ) {
-      return redirectToBunq(c.req.raw, oauthReqInfo);
+    // bunqClientId != clientId here.
+
+    if (await clientIdAlreadyApproved(c.req.raw, oauthReqInfo.clientId, cookie)) {
+      return redirectToBunq(c.req.raw, oauthReqInfo, bunqClientId);
     }
 
     return renderApprovalDialog(c.req.raw, {
@@ -36,12 +36,12 @@ export const createOAuthHandler = () => {
   });
 
   app.post("/authorize", async (c) => {
-    const { state, headers } = await parseRedirectApproval(c.req.raw, env.COOKIE_ENCRYPTION_KEY);
+    const { state, headers } = await parseRedirectApproval(c.req.raw, cookie);
     if (!state.oauthReqInfo) {
       return c.text("Invalid request", 400);
     }
 
-    return redirectToBunq(c.req.raw, state.oauthReqInfo, headers);
+    return redirectToBunq(c.req.raw, state.oauthReqInfo, bunqClientId, headers);
   });
 
   app.get("/callback", async (c) => {
@@ -65,8 +65,8 @@ export const createOAuthHandler = () => {
     const tokenUrl = new URL("https://api.oauth.bunq.com/v1/token");
     tokenUrl.searchParams.set("grant_type", "authorization_code");
     tokenUrl.searchParams.set("code", code);
-    tokenUrl.searchParams.set("client_id", env.BUNQ_CLIENT_ID);
-    tokenUrl.searchParams.set("client_secret", env.BUNQ_CLIENT_SECRET);
+    tokenUrl.searchParams.set("client_id", bunqClientId);
+    tokenUrl.searchParams.set("client_secret", bunqClientSecret);
     tokenUrl.searchParams.set("redirect_uri", new URL("/callback", c.req.url).href);
 
     const tokenResponse = await fetch(tokenUrl.toString(), {
@@ -133,6 +133,7 @@ function getUpstreamAuthorizeUrl(params: {
 function redirectToBunq(
   request: Request,
   oauthReqInfo: AuthRequest,
+  bunqClientId: string,
   headers: Record<string, string> = {},
 ) {
   return new Response(null, {
@@ -142,7 +143,7 @@ function redirectToBunq(
       location: getUpstreamAuthorizeUrl({
         upstream_url: "https://oauth.bunq.com/auth",
         scope: "read:user", // Bunq specific scopes can be added here
-        client_id: env.BUNQ_CLIENT_ID,
+        client_id: bunqClientId,
         redirect_uri: new URL("/callback", request.url).href,
         state: btoa(JSON.stringify(oauthReqInfo)),
       }),
