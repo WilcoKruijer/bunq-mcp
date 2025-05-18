@@ -1,6 +1,6 @@
 # Bunq MCP
 
-A Model Context Protocol server for Bunq.
+A Model Context Protocol server for Bunq (Dutch neo bank).
 
 ![Screenshot](./resources/screenshot.png)
 
@@ -14,10 +14,35 @@ This MCP server provides the following tools for interacting with Bunq:
 4. **createPaymentRequest** - Create a payment request to receive money into your account
 5. **getPaymentAutoAllocates** - Get automatic payment allocation settings for an account
 6. **getTopCounterparties** - Get a list of unique person counterparties based on recent transactions
-7. **createPayment** - Create draft payments with optional scheduling (requires review / approval in
+7. **createDraftPayment** - Create draft payments with optional scheduling (requires review / approval in
    the app before execution)
+8. **createPayment** - Create real-money payments (transfers immediately). Only available when using
+   an API key (not OAuth).
 
 These tools can be accessed through any MCP client connected to this server.
+
+## Authentication
+
+This server supports two modes of authentication: **OAuth** and **API Key**. See the [Bunq
+documentation](https://doc.bunq.com/basics/authentication) for more information.
+
+Creating an API key or OAuth client is done through the Bunq app:
+
+1. Press your face on the top left
+2. Press the cog in the top right
+3. Under "Developers", either go to "OAuth" or "API Keys".
+4. If using OAuth set the redirect URL to the following:
+   ```
+   http://localhost:8788/callback
+   ```
+
+(Modify the port if needed.)
+
+When starting the server, you can either set the `BUNQ_CLIENT_ID` and `BUNQ_CLIENT_SECRET`
+environment variables, or the `BUNQ_API_KEY` environment variable. Alternatively, you can pass
+the client ID and secret or API key as command line arguments: `--bunq-client-id <id> --bunq-client-secret <secret>` or `--bunq-api-key <key>`.
+
+**Note:** If you want to create actual real-money non-draft payments, you need to use an API key.
 
 ## Installation & Usage
 
@@ -27,11 +52,7 @@ These tools can be accessed through any MCP client connected to this server.
 npm install -g bunq-mcp mcp-remote
 ```
 
-2. In the Bunq app, create an OAuth client with the following settings:
-
-- Redirect URL: `http://localhost:8788/callback`
-
-(Modify the port if needed.)
+2. In the Bunq app, create an OAuth client or API key (see above).
 
 3. (Optional) Generate a new public/private key pair:
 
@@ -95,8 +116,9 @@ Options:
   --mcp               Start MCP server
   --host <host>       Host (for MCP server)
   --port <port>       Port (for MCP server)
-  --bunq-client-id <id>       Bunq client ID (alternative to BUNQ_CLIENT_ID env var)
+  --bunq-client-id <id>         Bunq client ID (alternative to BUNQ_CLIENT_ID env var)
   --bunq-client-secret <secret> Bunq client secret (alternative to BUNQ_CLIENT_SECRET env var)
+  --bunq-api-key <key>          Bunq API key (alternative to BUNQ_API_KEY env var)
 ```
 
 ## Development

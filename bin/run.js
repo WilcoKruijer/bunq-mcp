@@ -20,6 +20,7 @@ const {
     port,
     "bunq-client-id": bunqClientId,
     "bunq-client-secret": bunqClientSecret,
+    "bunq-api-key": bunqApiKey,
     version,
   },
 } = parseArgs({
@@ -32,6 +33,7 @@ const {
     "bunq-client-id": { type: "string" },
     "bunq-client-secret": { type: "string" },
     version: { type: "boolean", short: "v" },
+    "bunq-api-key": { type: "string" },
   },
 });
 
@@ -48,12 +50,16 @@ async function printHelp() {
   console.log("  --host <host>       Host (for MCP server)");
   console.log("  --port <port>       Port (for MCP server)");
   console.log(
-    "  --bunq-client-id <id>       Bunq client ID (alternative to BUNQ_CLIENT_ID env var)",
+    "  --bunq-client-id <id>         Bunq client ID (alternative to BUNQ_CLIENT_ID env var)",
   );
   console.log(
     "  --bunq-client-secret <secret> Bunq client secret (alternative to BUNQ_CLIENT_SECRET env var)",
   );
+  console.log("  --bunq-api-key <key>          Bunq API key (alternative to BUNQ_API_KEY env var)");
+
   console.log("");
+  console.log("Hint:");
+  console.log("  - Either an api key needs to be set, or a client id AND secret.");
 }
 
 async function printVersion() {
@@ -112,6 +118,7 @@ if (mcp) {
 
   const clientId = bunqClientId || env["BUNQ_CLIENT_ID"];
   const clientSecret = bunqClientSecret || env["BUNQ_CLIENT_SECRET"];
+  const apiKey = bunqApiKey || env["BUNQ_API_KEY"];
 
   console.log("Starting MCP server");
   const viteArgs = ["vite", "--config", join(__dirname, "../vite.config.ts")];
@@ -129,6 +136,7 @@ if (mcp) {
       ...env,
       BUNQ_CLIENT_ID: clientId,
       BUNQ_CLIENT_SECRET: clientSecret,
+      BUNQ_API_KEY: apiKey,
     },
   });
 

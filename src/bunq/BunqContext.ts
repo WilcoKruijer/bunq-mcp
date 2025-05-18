@@ -6,6 +6,7 @@ export interface BunqToken {
   sessionToken: string;
   userId: number;
   displayName: string;
+  flow: "oauth" | "api-key";
 }
 
 export class BunqContext {
@@ -50,14 +51,15 @@ export class BunqContext {
     await this.registerDeviceServer(installationToken);
 
     // 3. Start session
-    const sessionData = await this.startSession(installationToken);
+    const { sessionToken, userId, displayName, flow } = await this.startSession(installationToken);
 
     this.#retrievedToken = {
       accessToken: this.#accessToken,
       installationToken,
-      sessionToken: sessionData.sessionToken,
-      userId: sessionData.userId,
-      displayName: sessionData.displayName,
+      sessionToken,
+      userId,
+      displayName,
+      flow,
     };
 
     return this.#retrievedToken;
@@ -137,6 +139,7 @@ export class BunqContext {
     userId: number;
     displayName: string;
     sessionToken: string;
+    flow: "oauth" | "api-key";
   }> {
     if (!this.#accessToken) {
       throw new Error("Access token required for session creation");
@@ -179,15 +182,35 @@ export class BunqContext {
               };
             };
           };
+          UserPerson: {
+            id: number;
+            display_name: string;
+          };
         },
       ];
     };
 
-    return {
-      userId: data.Response[2].UserApiKey.granted_by_user.UserPerson.id,
-      displayName: data.Response[2].UserApiKey.granted_by_user.UserPerson.display_name,
-      sessionToken: data.Response[1].Token.token,
-    };
+    if (data.Response[2].UserApiKey) {
+      return {
+        userId: data.Response[2].UserApiKey.granted_by_user.UserPerson.id,
+        displayName: data.Response[2].UserApiKey.granted_by_user.UserPerson.display_name,
+        sessionToken: data.Response[1].Token.token,
+        flow: "oauth",
+      };
+    }
+
+    if (data.Response[2].UserPerson) {
+      return {
+        userId: data.Response[2].UserPerson.id,
+        displayName: data.Response[2].UserPerson.display_name,
+        sessionToken: data.Response[1].Token.token,
+        flow: "api-key",
+      };
+    }
+
+    throw new Error(
+      "UserApiKey and UserPerson is missing. First is expected in OAuth flow, second in API Key flow.",
+    );
   }
 
   async makeSignedRequest<T>(endpoint: string, method: string = "GET", body?: object): Promise<T> {

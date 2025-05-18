@@ -5,7 +5,8 @@ import { RequestAPI } from "./api/RequestAPI";
 import { UserProfileAPI } from "./api/UserProfileAPI";
 
 export interface BunqAuthProps {
-  accessToken: string;
+  accessToken?: string;
+  apiKeyAccessToken?: string;
 }
 
 export class BunqClient {

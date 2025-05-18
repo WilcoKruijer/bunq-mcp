@@ -59,13 +59,13 @@ export class PaymentAPI {
         ...body.counterparty_alias,
       },
     };
-    
+
     const data = await this.#context.makeSignedRequest<{ Response: [{ Id: { id: number } }] }>(
       url,
       "POST",
       requestBody,
     );
-    
+
     return { id: data.Response[0].Id.id };
   }
 
@@ -102,7 +102,7 @@ export class PaymentAPI {
     };
   }): Promise<{ id: number }> {
     const url = `/user/${userId}/monetary-account/${monetaryAccountId}/draft-payment`;
-    
+
     const requestBody = {
       status: "ACTIVE",
       entries: [
@@ -115,13 +115,54 @@ export class PaymentAPI {
       number_of_required_accepts: 1,
       ...(schedule && { schedule }),
     };
-    
+
     const data = await this.#context.makeSignedRequest<{ Response: [{ Id: { id: number } }] }>(
       url,
       "POST",
       requestBody,
     );
-    
+
+    return { id: data.Response[0].Id.id };
+  }
+
+  /**
+   * Create a real payment from a specific monetary account
+   * POST /v1/user/{userID}/monetary-account/{monetary-accountID}/payment
+   * @param userId - User ID (optional, defaults to context)
+   * @param monetaryAccountId - Monetary Account ID
+   * @param body - Request body for the payment
+   * @returns The created payment details
+   */
+  async createRealPayment({
+    userId = this.#context.token.userId,
+    monetaryAccountId,
+    body,
+  }: {
+    userId?: number;
+    monetaryAccountId: number;
+    body: {
+      amount: { value: string; currency: string };
+      counterparty_alias:
+        | { type: "EMAIL"; value: string; name?: string }
+        | { type: "IBAN"; value: string; name?: string }
+        | { type: "PHONE_NUMBER"; value: string; name?: string };
+      description: string;
+    };
+  }): Promise<{ id: number }> {
+    const url = `/user/${userId}/monetary-account/${monetaryAccountId}/payment`;
+    const requestBody = {
+      ...body,
+      counterparty_alias: {
+        ...body.counterparty_alias,
+      },
+    };
+
+    const data = await this.#context.makeSignedRequest<{ Response: [{ Id: { id: number } }] }>(
+      url,
+      "POST",
+      requestBody,
+    );
+
     return { id: data.Response[0].Id.id };
   }
 
