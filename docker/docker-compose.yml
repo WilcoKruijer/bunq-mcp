@@ -1,0 +1,13 @@
+services:
+  bunq-mcp:
+    container_name: bunq-mcp
+    image: node:latest
+    ports:
+      - "8788:8788"
+    volumes:
+      - ..:/opt
+      - ./bunq-mcp.sh:/usr/local/bin/bunq-mcp
+    working_dir: /app
+    environment:
+      - BUNQ_API_KEY=${BUNQ_API_KEY}
+    command: bash

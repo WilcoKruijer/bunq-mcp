@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     port: 8788,
   },
+  envPrefix: "BUNQ_",
   define: {
     "process.env": {
       BUNQ_CLIENT_ID: env["BUNQ_CLIENT_ID"],

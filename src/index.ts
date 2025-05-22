@@ -19,9 +19,17 @@ type BunqCredentials =
       apiKey: string;
     };
 
-const clientId = workersEnv["BUNQ_CLIENT_ID"] || process.env["BUNQ_CLIENT_ID"];
-const clientSecret = workersEnv["BUNQ_CLIENT_SECRET"] || process.env["BUNQ_CLIENT_SECRET"];
-const apiKey = workersEnv["BUNQ_API_KEY"] || process.env["BUNQ_API_KEY"];
+
+// All of this is a shitty hack, we can revisit later.
+const viteEnv = (import.meta as any).env;
+
+const clientId =
+  workersEnv["BUNQ_CLIENT_ID"] || process.env["BUNQ_CLIENT_ID"] || viteEnv.BUNQ_CLIENT_ID;
+const clientSecret =
+  workersEnv["BUNQ_CLIENT_SECRET"] ||
+  process.env["BUNQ_CLIENT_SECRET"] ||
+  viteEnv.BUNQ_CLIENT_SECRET;
+const apiKey = workersEnv["BUNQ_API_KEY"] || process.env["BUNQ_API_KEY"] || viteEnv.BUNQ_API_KEY;
 
 let credentials: BunqCredentials;
 
